@@ -1,3 +1,4 @@
+
 **Offer arithmetic of Integer larger than BigInteger as Text variable in pure AL**\
 Support up to 288 digits (equiv. 957 bit Integer) positive/negative\
 Decimals are not supported.\
@@ -25,18 +26,19 @@ CompareBigNumbers(Number1: Text; Number2: Text): Integer\
 Text variable passed to thoses function must only contain digits from 0..9 and optional leading sign.\
 \
 ***How to Use***
-\
-\
-> var
-> LargeNumbMath: Codeunit "INM Math Large Numbers";\
-> Result: Text;\
->begin\
-> Result := LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421');\
-> Message('Modulo %1 = %2', Result, LargeNumbMath.ModBigNumbers(Result, '4'));\
->end;\
-\
-You can combine multiple operation such as :\
-\
-> if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then\
- ...
+
+
+    var
+	    LargeNumbMath: Codeunit "INM Math Large Numbers";
+	    Result: Text;
+    begin
+	    Result := LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421');
+	    Message('Modulo %1 = %2', Result, LargeNumbMath.ModBigNumbers(Result, '4'));
+    end;
+
+You can combine multiple operation such as :
+
+
+    if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then
+     ...
 
