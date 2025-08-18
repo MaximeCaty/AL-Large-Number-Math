@@ -1,9 +1,9 @@
-**Offer arithmetic of Integer larger than BigInteger as Text variable in pure AL**
-Support up to 288 digits (equiv. 957 bit Integer)
-Decimals are not supported.
-The maximum value is : 
-9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999998
-
+**Offer arithmetic of Integer larger than BigInteger as Text variable in pure AL**\
+Support up to 288 digits (equiv. 957 bit Integer)\
+Decimals are not supported.\
+The maximum value is : \
+9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999998\
+\
 ***How it work***
 \
 Internally the value are stored as array of Integer (aka "limbs") for faster operation, the coduenit convert text to array of Integer in a base of 10^{9}.\
@@ -38,6 +38,5 @@ end;\
 You can combine multiple operation such as :\
 \
 if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then\
- ...\
-\
+ ...
 
