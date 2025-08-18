@@ -48,7 +48,7 @@ You can combine multiple operation such as :
 \
 Performance : The limbs manipulation have been optimized for operation on large number. division use Knuh algorihtm. \
 Benchmark of 5'000 operations of random large number show an average duration of 10ns (0.01ms) per operation.\
-Fastest operation is Compare (average of 0.8ns) while other operation have consistent same average duration about 10ns.
+Fastest operation is Compare (average of 0.8ns) while other operation have consistent same average duration about 10ns.\
 \
 Length :\
 Maximum supported value is 288 digits "9" in positvie or negative (1 sign + 288 digits).\
