@@ -28,15 +28,15 @@ Text variable passed to thoses function must only contain digits from 0..9 and o
 \
 \
 > var
->> LargeNumbMath: Codeunit "INM Math Large Numbers";\
->> Result: Text;\
+> LargeNumbMath: Codeunit "INM Math Large Numbers";\
+> Result: Text;\
 >begin\
->> Result := LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421');\
->> Message('Modulo %1 = %2', Result, LargeNumbMath.ModBigNumbers(Result, '4'));\
+> Result := LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421');\
+> Message('Modulo %1 = %2', Result, LargeNumbMath.ModBigNumbers(Result, '4'));\
 >end;\
 \
 You can combine multiple operation such as :\
 \
->if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then\
+> if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then\
  ...
 
