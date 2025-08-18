@@ -44,7 +44,8 @@ You can combine multiple operation such as :
      ...
 
 
-***Limitation***
+***Limitations***
+\
 \
 Performance : The limbs manipulation have been optimized for operation on large number. division use Knuh algorihtm. \
 Benchmark of 5'000 operations of random large number show an average duration of 10ns (0.01ms) per operation.\
