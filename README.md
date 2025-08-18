@@ -50,8 +50,10 @@ You can combine multiple operation such as :
 \
 Performance :\
 The limbs manipulation have been optimized for operation on large number.
-Benchmark of 5'000 operations of random large number show an approximate of 50ms duration, so average of 10ns (0.01ms) per operation.\
-The fastest operation is Compare (average of 0.8ns) then Square (average of 7ns) while other operation have consistent same average duration (about 10ns).\
+Benchmark of 5'000 operations of random large number show an approximate of 100ms duration, so average of 20ns (0.02ms) per operation.\
+The fastest operation is Compare (average of 2ns) then Square (average of 7ns).\
+The slowest is Modular Inverse (average of 360ns).\
+Other operation have consistent same average duration (about 20ns).\
 If your value is in supported range of BigInteger or Decimal, you should not use this functions as its slower than native operation.\
 \
 Length :\
