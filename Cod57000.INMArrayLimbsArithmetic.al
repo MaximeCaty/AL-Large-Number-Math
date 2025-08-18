@@ -1,6 +1,6 @@
 codeunit 57000 "INM Array Limbs Arithmetic"
 {
-    // Provide convertion and math operation on Arrays[32] of Integer
+    // Provide convertion and math operation on Arrays 32 of limbs integer base 1000000000
     /*
         Conversion :
             TextToArray(BigBigInteger: Text; var ArrInt: array[32] of Integer; var Len: Integer)
@@ -16,8 +16,6 @@ codeunit 57000 "INM Array Limbs Arithmetic"
             MultiplyArrays(AArr: array[32] of Integer; ALen: Integer; BArr: array[32] of Integer; BLen: Integer; var ResultArr: array[32] of Integer; var ResultLen: Integer)
             SquareArrays(AArr: array[32] of Integer; ALen: Integer; var ResultArr: array[32] of Integer; var ResultLen: Integer)
             PowerArrays(BaseArr: array[32] of Integer; BaseLen: Integer; ExpArr: array[32] of Integer; ExpLen: Integer; var ResultArr: array[32] of Integer; var ResultLen: Integer)
-            
-
     */
 
     SingleInstance = true;
@@ -30,15 +28,10 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         i, ChunkSize : Byte;
     begin
         clear(ArrInt);
-        Len := 0;
-        if BigBigInteger in ['', '0'] then
-            exit;
-
-        if BigBigInteger.StartsWith('-') then
-            BigBigInteger := BigBigInteger.Substring(2);
-        BigBigInteger := BigBigInteger.TrimStart('0');
-
+        clear(Len);
+        BigBigInteger := BigBigInteger.TrimStart('-');
         Pos := StrLen(BigBigInteger);
+        if Pos = 0 then exit;
         while Pos > 0 do begin
             i += 1;
             if Pos < 9 then
@@ -53,22 +46,15 @@ codeunit 57000 "INM Array Limbs Arithmetic"
             Len -= 1;
     end;
 
-    procedure ArrayToText(var ArrInt: array[32] of Integer; var ArrLen: Integer): Text
+    procedure ArrayToText(var ArrInt: array[32] of Integer; ArrLen: Integer): Text
     var
-        i: Integer;
-        LimbStr: Text[9];
-        First: Boolean;
+        i: Byte;
         TextBuild: TextBuilder;
     begin
-        First := true;
-        for i := ArrLen downto 1 do begin
-            LimbStr := Format(ArrInt[i]);
-            if First then begin
-                TextBuild.Append(LimbStr);
-                First := false;
-            end else
-                TextBuild.Append(LimbStr.PadLeft(9, '0'));
-        end;
+        TextBuild.Append(Format(ArrInt[ArrLen]));
+        if ArrLen > 1 then
+            for i := ArrLen - 1 downto 1 do
+                TextBuild.Append(Format(ArrInt[i]).PadLeft(9, '0'));
         exit(TextBuild.ToText());
     end;
     #endregion
@@ -80,7 +66,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         k: Integer;
     begin
         // Len peut être > 0 ; on vérifie la valeur réelle (tous les limbs nuls)
-        for k := 1 to Len do
+        for k := Len downto 1 do
             if Arr[k] <> 0 then
                 exit(false);
         exit(true);
@@ -88,7 +74,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
 
     procedure CopyPrefix(var Src: array[32] of Integer; var Dst: array[32] of Integer; count: Integer)
     var
-        i: Integer;
+        i: Byte;
     begin
         for i := 1 to count do
             Dst[i] := Src[i];
@@ -117,14 +103,6 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         exit;
     end;
 
-    local procedure Max(Val1: Integer; Val2: Integer): Integer
-    begin
-        if Val1 > Val2 then
-            exit(Val1)
-        else
-            exit(Val2);
-    end;
-
     procedure IsOdd(AArr: array[32] of Integer): Boolean
     begin
         exit((AArr[1] mod 2) = 1);
@@ -144,40 +122,17 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     var
         Carry: Integer;
         Temp: Integer;
-        i: Integer;
-        MinLen: Integer;
+        i: Byte;
         MaxLen: Integer;
-        IsALonger: Boolean;
     begin
         Carry := 0;
-        if ALen > BLen then begin
-            MinLen := BLen;
-            MaxLen := ALen;
-            IsALonger := true;
-        end else begin
-            MinLen := ALen;
-            MaxLen := BLen;
-            IsALonger := false;
-        end;
-        for i := 1 to MinLen do begin
-            Temp := A[i] + B[i] + Carry;
+        if ALen > BLen then MaxLen := ALen else MaxLen := BLen;
+        for i := 1 to MaxLen do begin
+            Temp := Carry;
+            if i <= ALen then Temp += A[i];
+            if i <= BLen then Temp += B[i];
             Res[i] := Temp mod 1000000000;
             Carry := Temp div 1000000000;
-        end;
-        if MinLen < MaxLen then begin
-            if IsALonger then begin
-                for i := MinLen + 1 to MaxLen do begin
-                    Temp := A[i] + Carry;
-                    Res[i] := Temp mod 1000000000;
-                    Carry := Temp div 1000000000;
-                end;
-            end else begin
-                for i := MinLen + 1 to MaxLen do begin
-                    Temp := B[i] + Carry;
-                    Res[i] := Temp mod 1000000000;
-                    Carry := Temp div 1000000000;
-                end;
-            end;
         end;
         if Carry > 0 then begin
             if MaxLen + 1 > ArrayLen(Res) then
@@ -194,11 +149,10 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     var
         Borrow: Integer;
         Temp: Integer;
-        i: Integer;
+        i: Byte;
     begin
         // Absolute substraction
         // Important : A must be >= than B !!
-        Borrow := 0;
         for i := 1 to ALen do begin
             if i <= BLen then
                 Temp := A[i] - B[i] - Borrow
@@ -224,10 +178,9 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         var Quotien: array[32] of Integer;
         var qLen: Integer)
     var
-        j: Integer;
-        m, n : Integer;
+        j: Byte;
+        m: Integer;
         QHat: Integer;
-        D: Integer;
     begin
         Clear(Quotien);
         qLen := DividendLen;
@@ -251,17 +204,17 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         // D.0 Define
         // U = Dividend, V = Divisor
         m := DividendLen - DivisorLen;
-        n := DivisorLen;
+        //n := DivisorLen;
 
         // D.1 Normalize
-        D := KnuthD1Normalize(Dividend, Divisor, m, n); // Multiplie U et V par D
+        KnuthD1Normalize(Dividend, Divisor, m, DivisorLen); // Multiplie U et V par D
 
         // D.2 to D.6 division
         for j := m downto 0 do begin
-            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, n);
-            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, n, QHat) then begin
+            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, DivisorLen);
+            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, DivisorLen, QHat) then begin
                 QHat := QHat - 1;
-                KnuthD6AddBack(Dividend, Divisor, j, n);
+                KnuthD6AddBack(Dividend, Divisor, j, DivisorLen);
             end;
             Quotien[j + 1] := QHat;
         end;
@@ -269,22 +222,22 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     end;
     #endregion
 
-    #region Arith. Div+Rem
+    #region Arith.Div+Rem
     procedure DivideArrayWithRemainder(
         Dividend: array[32] of Integer; DividendLen: Integer;
         Divisor: array[32] of Integer; DivisorLen: Integer;
         var Remainder: array[32] of Integer; var rLen: Integer;
         var Quotien: array[32] of Integer; var qLen: Integer)
     var
-        j: Integer;
-        m, n : Integer;
+        j: Byte;
+        m: Integer;
         QHat: Integer;
         D: Integer;
     begin
         Clear(Remainder);
         Clear(Quotien);
         qLen := DividendLen;
-        rLen := 0;
+        Clear(rLen);
 
         if DivisorLen = 0 then
             Error('Divide by zero (n = 0).');
@@ -292,7 +245,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         // Dividend < Divisor → quotient = 0, remainder = dividend
         if CompareArrays(Dividend, DividendLen, Divisor, DivisorLen) < 0 then begin
             CopyPrefix(Dividend, Remainder, DividendLen);
-            qLen := 0;
+            clear(qLen);
             rLen := DividendLen;
             exit;
         end;
@@ -311,28 +264,28 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         // U = Dividend
         // V = Divisor
         m := DividendLen - DivisorLen;
-        n := DivisorLen;
+        //n := DivisorLen;
 
         // D.1 Normalize
-        D := KnuthD1Normalize(Dividend, Divisor, m, n); // Multiplie U et V par D
+        D := KnuthD1Normalize(Dividend, Divisor, m, DivisorLen); // Multiplie U et V par D
 
         // D.2 to D.6 division
         for j := m downto 0 do begin
-            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, n);
-            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, n, QHat) then begin
+            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, DivisorLen);
+            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, DivisorLen, QHat) then begin
                 QHat := QHat - 1;
-                KnuthD6AddBack(Dividend, Divisor, j, n);
+                KnuthD6AddBack(Dividend, Divisor, j, DivisorLen);
             end;
             Quotien[j + 1] := QHat;
         end;
 
         // D.7 : unnormalize
-        KnuthD7UnnormalizeRemainder(Dividend, n, D);
+        KnuthD7UnnormalizeRemainder(Dividend, DivisorLen, D);
 
         // D.8 : output Lengths
         rLen := 0;
         CopyArray(Remainder, Dividend, 1);
-        rLen := Normalize(Remainder, n + 1);
+        rLen := Normalize(Remainder, DivisorLen + 1);
         qLen := Normalize(Quotien, m + 1);
     end;
 
@@ -340,15 +293,13 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         var U: array[32] of Integer; m: Integer; d: Integer;
         var Q: array[32] of Integer; var qLen: Integer)
     var
-        i: Integer;
+        i: Byte;
         carry, tmp : Decimal;
         Qid: Decimal;
     begin
         if d <= 0 then
             Error('Invalid divisor (<= 0).');
-
         Clear(Q);
-        carry := 0;
         for i := m downto 1 do begin
             tmp := carry * 1000000000 + U[i];
             Q[i] := tmp div d;
@@ -365,7 +316,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         var R: array[32] of Integer; var rLen: Integer;
         var Q: array[32] of Integer; var qLen: Integer)
     var
-        i: Integer;
+        i: Byte;
         carry, tmp : Decimal;
         Qid: Decimal;
     begin
@@ -373,7 +324,6 @@ codeunit 57000 "INM Array Limbs Arithmetic"
             Error('Invalid divisor (<= 0).');
         Clear(Q);
         Clear(R);
-        carry := 0;
         for i := m downto 1 do begin
             tmp := carry * 1000000000 + U[i];
             Q[i] := tmp div d;
@@ -397,14 +347,14 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         Divisor: array[32] of Integer; DivisorLen: Integer;
         var Remainder: array[32] of Integer; var rLen: Integer)
     var
-        j: Integer;
-        m, n : Integer;
+        j: Byte;
+        m: Integer;
         QHat: Integer;
         D: Integer;
     begin
         // Same as division, remouved quotient storing
         Clear(Remainder);
-        rLen := 0;
+        Clear(rLen);
 
         if DivisorLen = 0 then
             Error('Divide by zero (n = 0).');
@@ -430,32 +380,32 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         // U = Dividend
         // V = Divisor
         m := DividendLen - DivisorLen;
-        n := DivisorLen;
+        //n := DivisorLen;
 
         // D.1 Normalize
-        D := KnuthD1Normalize(Dividend, Divisor, m, n); // Multiplie U et V par D
+        D := KnuthD1Normalize(Dividend, Divisor, m, DivisorLen); // Multiplie U et V par D
 
         // D.2 to D.6 division
         for j := m downto 0 do begin
-            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, n);
-            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, n, QHat) then begin
+            QHat := KnuthD3TrialQuotient(Dividend, Divisor, j, DivisorLen);
+            if KnuthD4MultiplyAndSubtract(Dividend, Divisor, j, DivisorLen, QHat) then begin
                 QHat := QHat - 1;
-                KnuthD6AddBack(Dividend, Divisor, j, n);
+                KnuthD6AddBack(Dividend, Divisor, j, DivisorLen);
             end;
         end;
 
         // D.7 : unnormalize
-        KnuthD7UnnormalizeRemainder(Dividend, n, D);
+        KnuthD7UnnormalizeRemainder(Dividend, DivisorLen, D);
 
         // D.8 : output Lengths
         rLen := 0;
         CopyArray(Remainder, Dividend, 1);
-        rLen := Normalize(Remainder, n + 1);
+        rLen := Normalize(Remainder, DivisorLen + 1);
     end;
     #endregion
 
-    #region Arith. ModInv
-    procedure ModuloInverseArray(
+    #region Arith.ModInv
+    /*procedure ModuloInverseArray(
         Dividend: array[32] of Integer; DividendLen: Integer;
         Divisor: array[32] of Integer; DivisorLen: Integer;
         var Remainder: array[32] of Integer; var rLen: Integer)
@@ -474,117 +424,190 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         new_s_sign: Integer;
         new_s: array[32] of Integer;
         new_s_len: Integer;
-        old_t_sign: Integer;
-        old_t: array[32] of Integer;
-        old_t_len: Integer;
-        new_t_sign: Integer;
-        new_t: array[32] of Integer;
-        new_t_len: Integer;
         prov_s_sign: Integer;
         prov_s: array[32] of Integer;
         prov_s_len: Integer;
-        prov_t_sign: Integer;
-        prov_t: array[32] of Integer;
-        prov_t_len: Integer;
         mul_temp_s: array[32] of Integer;
         mul_temp_s_len: Integer;
-        mul_temp_t: array[32] of Integer;
-        mul_temp_t_len: Integer;
         mul_s_sign: Integer;
-        mul_t_sign: Integer;
-        rem_temp: array[32] of Integer;
-        rem_temp_len: Integer;
-        q_temp: array[32] of Integer;
-        q_temp_len: Integer;
-        one_arr: array[32] of Integer;
-        one_len: Integer;
     begin
-        // Compute Dividend % Divisor to reduce the input
-        DivideArrayWithRemainder(Dividend, DividendLen, Divisor, DivisorLen, rem_temp, rem_temp_len, q_temp, q_temp_len);
-        if IsZeroArray(rem_temp, rem_temp_len) then begin
+        // Compute Dividend % Divisor directly into old_r to reduce the input
+        DivideArrayWithRemainder(Dividend, DividendLen, Divisor, DivisorLen, old_r, old_r_len, quot, quot_len);
+        if IsZeroArray(old_r, old_r_len) then begin
             Remainder[1] := 0;
             rLen := 1;
             exit;
         end;
-        clear(Remainder);
-        rLen := 0;
-
         // Initialize
-        CopyArray(old_r, rem_temp, 1);
-        old_r_len := rem_temp_len;
         CopyArray(new_r, Divisor, 1);
         new_r_len := DivisorLen;
-
         old_s_sign := 1;
         old_s[1] := 1;
         old_s_len := 1;
-
-        new_s_sign := 0;
-        new_s_len := 0;
-
-        old_t_sign := 0;
-        old_t_len := 0;
-
-        new_t_sign := 1;
-        new_t[1] := 1;
-        new_t_len := 1;
-
         while not IsZeroArray(new_r, new_r_len) do begin
             // Compute quotient and provisional remainder
             DivideArrayWithRemainder(old_r, old_r_len, new_r, new_r_len, prov_r, prov_r_len, quot, quot_len);
-
             // Compute provisional s
             MultiplyByPositive(quot, quot_len, new_s_sign, new_s, new_s_len, mul_s_sign, mul_temp_s, mul_temp_s_len);
             SubtractSigned(old_s_sign, old_s, old_s_len, mul_s_sign, mul_temp_s, mul_temp_s_len, prov_s_sign, prov_s, prov_s_len);
-
-            // Compute provisional t
-            MultiplyByPositive(quot, quot_len, new_t_sign, new_t, new_t_len, mul_t_sign, mul_temp_t, mul_temp_t_len);
-            SubtractSigned(old_t_sign, old_t, old_t_len, mul_t_sign, mul_temp_t, mul_temp_t_len, prov_t_sign, prov_t, prov_t_len);
-
             // Update old to new
             CopyArray(old_r, new_r, 1);
             old_r_len := new_r_len;
             old_s_sign := new_s_sign;
             CopyArray(old_s, new_s, 1);
             old_s_len := new_s_len;
-            old_t_sign := new_t_sign;
-            CopyArray(old_t, new_t, 1);
-            new_t_len := old_t_len;
-
             // Update new to provisional
             CopyArray(new_r, prov_r, 1);
             new_r_len := prov_r_len;
             new_s_sign := prov_s_sign;
             CopyArray(new_s, prov_s, 1);
             new_s_len := prov_s_len;
-            new_t_sign := prov_t_sign;
-            CopyArray(new_t, prov_t, 1);
-            prov_t_len := new_t_len;
+        end;
+        // Check if GCD is 1
+        if not ((old_r_len = 1) and (old_r[1] = 1)) then begin
+            Remainder[1] := 0;
+            rLen := 1;
+            exit;
+        end;
+        // Compute the modular inverse from old_s, handling sign
+        if old_s_sign > 0 then begin
+            // Positive: old_s % Divisor
+            DivideArrayWithRemainder(old_s, old_s_len, Divisor, DivisorLen, Remainder, rLen, quot, quot_len);
+        end else if old_s_sign < 0 then begin
+            // Negative: Divisor - (magnitude % Divisor) if not zero
+            DivideArrayWithRemainder(old_s, old_s_len, Divisor, DivisorLen, new_r, new_r_len, quot, quot_len);
+            if IsZeroArray(new_r, new_r_len) then begin
+                Remainder[1] := 0;
+                rLen := 1;
+            end else
+                SubtractArrays(Divisor, DivisorLen, new_r, new_r_len, Remainder, rLen);
+        end else begin
+            // Zero: shouldn't happen
+            Remainder[1] := 0;
+            rLen := 1;
+        end;
+    end;*/
+    procedure ModuloInverseArray(
+        Dividend: array[32] of Integer; DividendLen: Integer;
+        Divisor: array[32] of Integer; DivisorLen: Integer;
+        var Remainder: array[32] of Integer; var rLen: Integer)
+    var
+        u: array[32] of Integer;
+        u_len: Integer;
+        v: array[32] of Integer;
+        v_len: Integer;
+        s_u: array[32] of Integer;
+        s_u_len: Integer;
+        s_u_sign: Integer;  // x1: coeff of dividend for u
+        t_u: array[32] of Integer;
+        t_u_len: Integer;
+        t_u_sign: Integer;  // y1: coeff of divisor for u
+        s_v: array[32] of Integer;
+        s_v_len: Integer;
+        s_v_sign: Integer;  // x2: coeff of dividend for v
+        t_v: array[32] of Integer;
+        t_v_len: Integer;
+        t_v_sign: Integer;  // y2: coeff of divisor for v
+        orig_a: array[32] of Integer;
+        orig_a_len: Integer;
+        orig_b: array[32] of Integer;
+        orig_b_len: Integer;
+        temp: array[32] of Integer;
+        temp_len: Integer;
+        temp_sign: Integer;
+        quot: array[32] of Integer;
+        quot_len: Integer;
+        shift: Integer;
+    begin
+        // Initial mod to reduce dividend, into u
+        DivideArrayWithRemainder(Dividend, DividendLen, Divisor, DivisorLen, u, u_len, quot, quot_len);
+        if IsZeroArray(u, u_len) then begin
+            Remainder[1] := 0;
+            rLen := 1;
+            exit;
+        end;
+        CopyArray(v, Divisor, 1);
+        v_len := DivisorLen;
+
+        // Remove common factors of 2
+        shift := 0;
+        while IsEvenArray(u, u_len) and IsEvenArray(v, v_len) do begin
+            DivideBySmall(u, u_len, 2);
+            DivideBySmall(v, v_len, 2);
+            shift += 1;
+        end;
+
+        // Copy original shifted a and b
+        CopyArray(orig_a, u, 1);
+        orig_a_len := u_len;
+        CopyArray(orig_b, v, 1);
+        orig_b_len := v_len;
+
+        // Initialize coefficients
+        s_u_sign := 1;
+        s_u[1] := 1;
+        s_u_len := 1;  // x1 = 1
+        t_u_sign := 0;
+        t_u_len := 0;  // y1 = 0
+        s_v_sign := 0;
+        s_v_len := 0;  // x2 = 0
+        t_v_sign := 1;
+        t_v[1] := 1;
+        t_v_len := 1;  // y2 = 1
+
+        // Main loop
+        while CompareArrays(u, u_len, v, v_len) <> 0 do begin
+            if IsEvenArray(u, u_len) then begin
+                DivideBySmall(u, u_len, 2);
+                if IsEvenSigned(s_u_sign, s_u, s_u_len) and IsEvenSigned(t_u_sign, t_u, t_u_len) then begin
+                    HalveSigned(s_u_sign, s_u, s_u_len);
+                    HalveSigned(t_u_sign, t_u, t_u_len);
+                end else begin
+                    AddSigned(s_u_sign, s_u, s_u_len, 1, orig_b, orig_b_len, temp_sign, temp, temp_len);
+                    FloorHalveSigned(temp_sign, temp, temp_len, s_u_sign, s_u, s_u_len);
+                    SubtractSigned(t_u_sign, t_u, t_u_len, 1, orig_a, orig_a_len, temp_sign, temp, temp_len);
+                    FloorHalveSigned(temp_sign, temp, temp_len, t_u_sign, t_u, t_u_len);
+                end;
+            end else if IsEvenArray(v, v_len) then begin
+                DivideBySmall(v, v_len, 2);
+                if IsEvenSigned(s_v_sign, s_v, s_v_len) and IsEvenSigned(t_v_sign, t_v, t_v_len) then begin
+                    HalveSigned(s_v_sign, s_v, s_v_len);
+                    HalveSigned(t_v_sign, t_v, t_v_len);
+                end else begin
+                    AddSigned(s_v_sign, s_v, s_v_len, 1, orig_b, orig_b_len, temp_sign, temp, temp_len);
+                    FloorHalveSigned(temp_sign, temp, temp_len, s_v_sign, s_v, s_v_len);
+                    SubtractSigned(t_v_sign, t_v, t_v_len, 1, orig_a, orig_a_len, temp_sign, temp, temp_len);
+                    FloorHalveSigned(temp_sign, temp, temp_len, t_v_sign, t_v, t_v_len);
+                end;
+            end else if CompareArrays(u, u_len, v, v_len) > 0 then begin
+                SubtractArrays(u, u_len, v, v_len, u, u_len);
+                SubtractSigned(s_u_sign, s_u, s_u_len, s_v_sign, s_v, s_v_len, s_u_sign, s_u, s_u_len);
+                SubtractSigned(t_u_sign, t_u, t_u_len, t_v_sign, t_v, t_v_len, t_u_sign, t_u, t_u_len);
+            end else begin
+                SubtractArrays(v, v_len, u, u_len, v, v_len);
+                SubtractSigned(s_v_sign, s_v, s_v_len, s_u_sign, s_u, s_u_len, s_v_sign, s_v, s_v_len);
+                SubtractSigned(t_v_sign, t_v, t_v_len, t_u_sign, t_u, t_u_len, t_v_sign, t_v, t_v_len);
+            end;
         end;
 
         // Check if GCD is 1
-        one_arr[1] := 1;
-        one_len := 1;
-        if CompareArrays(old_r, old_r_len, one_arr, one_len) <> 0 then begin
+        if (shift > 0) or not ((u_len = 1) and (u[1] = 1)) then begin
             Remainder[1] := 0;
             rLen := 1;
             exit;
         end;
 
-        // Compute the modular inverse from old_s, handling sign
-        if old_s_sign > 0 then begin
-            // Positive: old_s % Divisor
-            DivideArrayWithRemainder(old_s, old_s_len, Divisor, DivisorLen, Remainder, rLen, q_temp, q_temp_len);
-        end else if old_s_sign < 0 then begin
-            // Negative: Divisor - (magnitude % Divisor) if not zero
-            DivideArrayWithRemainder(old_s, old_s_len, Divisor, DivisorLen, rem_temp, rem_temp_len, q_temp, q_temp_len);
-            if IsZeroArray(rem_temp, rem_temp_len) then begin
-                CopyArray(Remainder, rem_temp, 1);
-                rem_temp_len := rLen;
+        // Compute the modular inverse from s_u (coeff of dividend), handling sign
+        if s_u_sign > 0 then begin
+            DivideArrayWithRemainder(s_u, s_u_len, Divisor, DivisorLen, Remainder, rLen, quot, quot_len);
+        end else if s_u_sign < 0 then begin
+            DivideArrayWithRemainder(s_u, s_u_len, Divisor, DivisorLen, temp, temp_len, quot, quot_len);
+            if IsZeroArray(temp, temp_len) then begin
+                Remainder[1] := 0;
+                rLen := 1;
             end else
-                SubtractArrays(Divisor, DivisorLen, rem_temp, rem_temp_len, Remainder, rLen);
+                SubtractArrays(Divisor, DivisorLen, temp, temp_len, Remainder, rLen);
         end else begin
-            // Zero: shouldn't happen
             Remainder[1] := 0;
             rLen := 1;
         end;
@@ -594,9 +617,9 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     #region Arith. Mul
     procedure MultiplyArrays(AArr: array[32] of Integer; ALen: Integer; BArr: array[32] of Integer; BLen: Integer; var ResultArr: array[32] of Integer; var ResultLen: Integer)
     var
-        i: Integer;
-        j: Integer;
-        Carry: BigInteger;
+        i: Byte;
+        j: Byte;
+        Carry: Integer;
         Temp: BigInteger;
     begin
         clear(ResultArr);
@@ -604,7 +627,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
             Carry := 0;
             for j := 1 to BLen do begin
                 Temp := AArr[i];
-                Temp *= BArr[j]; // split operation to stay in BigInt scope
+                Temp *= BArr[j];
                 Temp += ResultArr[i + j - 1] + Carry;
                 ResultArr[i + j - 1] := Temp mod 1000000000;
                 Carry := Temp div 1000000000;
@@ -613,8 +636,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
             while Carry > 0 do begin
                 if i + j - 1 > ArrayLen(ResultArr) then
                     Error('Overflow in bigbiginteger multiplication result');
-                Temp := Carry;
-                Temp += ResultArr[i + j - 1];
+                Temp := Carry + ResultArr[i + j - 1];
                 ResultArr[i + j - 1] := Temp mod 1000000000;
                 Carry := Temp div 1000000000;
                 j += 1;
@@ -628,8 +650,8 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     #region Arith. Sqr
     procedure SquareArrays(AArr: array[32] of Integer; ALen: Integer; var ResultArr: array[32] of Integer; var ResultLen: Integer)
     var
-        i: Integer;
-        j: Integer;
+        i: Byte;
+        j: Byte;
         Carry: BigInteger;
         Temp: BigInteger;
     begin
@@ -724,17 +746,16 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     local procedure KnuthD1Normalize(var U: array[33] of Integer; var V: array[32] of Integer; var m: Integer; n: Integer): Integer
     var
         D: Integer;
-        i: Integer;
-        Carry: BigInteger;
+        i: Byte;
+        Carry: Integer;
         Prod: BigInteger;
     begin
         // Knuth D Algorithm - Step D.1
         D := 1000000000 div (V[n] + 1);
         if D = 1 then
-            exit(D); // Pas de normalisation nécessaire
+            exit(D); // no normalisation needed
 
         // Multiplier tous les chiffres de V par D
-        Carry := 0;
         for i := 1 to n do begin
             Prod := V[i];
             Prod *= D;
@@ -764,13 +785,13 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         exit(D);
     end;
 
-    local procedure KnuthD3TrialQuotient(U: array[33] of Integer; V: array[32] of Integer; j: Integer; n: Integer): Integer
+    local procedure KnuthD3TrialQuotient(U: array[33] of Integer; V: array[32] of Integer; j: Byte; n: Integer): Integer
     var
         Uj: BigInteger;
         V1: Integer;
         V2: Integer;
         QHat, Limit : BigInteger;
-        RHat: BigInteger;
+        RHat: Integer;
     begin
         //Set Q̂ to (U[n+j] × B + U[n−1+j]) ÷ V[n−1];
         //Set R̂ to (U[n+j] × B + U[n−1+j]) % V[n−1];
@@ -811,14 +832,14 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         exit(QHat);
     end;
 
-    local procedure KnuthD4MultiplyAndSubtract(var U: array[33] of Integer; V: array[32] of Integer; j: Integer; n: Integer; QHat: Integer): Boolean
+    local procedure KnuthD4MultiplyAndSubtract(var U: array[33] of Integer; V: array[32] of Integer; j: Byte; n: Integer; QHat: Integer): Boolean
     var
-        i: Integer;
-        Carry: BigInteger;
+        i: Byte;
+        Carry: Integer;
         Prod: BigInteger;
-        Low: BigInteger;
-        High: BigInteger;
-        Diff: BigInteger;
+        Low: Integer;
+        High: Integer;
+        Diff: Integer;
     begin
         /*
         Replace (U[n+j]U[n−1+j]…U[j]) by (U[n+j]U[n−1+j]…U[j]) − Q̂ × (V[n−1]…V[1]V[0]).
@@ -848,9 +869,9 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         exit(Diff < 0); // True if q̂ was too large
     end;
 
-    local procedure KnuthD6AddBack(var U: array[33] of Integer; V: array[32] of Integer; j: Integer; n: Integer)
+    local procedure KnuthD6AddBack(var U: array[33] of Integer; V: array[32] of Integer; j: Byte; n: Integer)
     var
-        i: Integer;
+        i: Byte;
         Carry: Integer;
         Sum: BigInteger;
     begin
@@ -871,7 +892,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     local procedure KnuthD7UnnormalizeRemainder(var U: array[33] of Integer; n: Integer; D: Integer)
     var
         Remainder: BigInteger;
-        i: Integer;
+        i: Byte;
         Curr: BigInteger;
     begin
         Remainder := 0;
@@ -952,7 +973,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         var U: array[32] of Integer; m: Integer; d: Integer;
         var R: array[32] of Integer; var rLen: Integer)
     var
-        i: Integer;
+        i: Byte;
         carry, tmp : Decimal;
     begin
         if d <= 0 then
@@ -976,9 +997,9 @@ codeunit 57000 "INM Array Limbs Arithmetic"
 
     local procedure DivideBySmall(var Arr: array[32] of Integer; var Len: Integer; Small: Integer)
     var
-        Remainder: BigInteger;
+        Remainder: Integer;
         Temp: BigInteger;
-        i: Integer;
+        i: Byte;
     begin
         Remainder := 0;
         for i := Len downto 1 do begin
@@ -996,7 +1017,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         Carry: BigInteger;
         From: BigInteger;
         Temp: BigInteger;
-        j: Integer;
+        j: Byte;
     begin
         Carry := 0;
         for j := 1 to Len do begin
@@ -1014,9 +1035,17 @@ codeunit 57000 "INM Array Limbs Arithmetic"
         end;
     end;
 
+    procedure NegateArray(var A: array[32] of Integer; ALen: Integer)
+    var
+        i: Byte;
+    begin
+        for i := 1 to ALen do
+            A[i] := -A[i];
+    end;
+
     procedure CompareArrays(A: array[32] of Integer; ALen: Integer; B: array[32] of Integer; BLen: Integer): Integer
     var
-        i: Integer;
+        i: Byte;
     begin
         if ALen > BLen then
             exit(1);

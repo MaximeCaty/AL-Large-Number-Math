@@ -12,7 +12,7 @@ codeunit 57298 "INM Math Large Numbers"
 
     Available operations:
     - AddBigNumbers(Number1: Text; Number2: Text): Text
-    - AddUnSignedBigNumbers(Number1: Text; Number2: Text): Text
+    - SubtractBigNumbers(Number1: Text; Number2: Text): Text
     - MultiplyBigNumbers(A: Text; B: Text) Result: Text
     - SquareBigNumber(A: Text): Text
     - PowerBigNumbers(Base: Text; Exponent: Text) Result: Text
@@ -49,7 +49,7 @@ codeunit 57298 "INM Math Large Numbers"
             if Sign1 = false then
                 exit('-' + Result);
             exit(Result);
-        end else begin
+        end else
             case CompareBigNumbers(Abs1, Abs2) of
                 0:
                     exit('0');
@@ -70,13 +70,13 @@ codeunit 57298 "INM Math Large Numbers"
                             exit(Result);
                     end;
             end;
-        end;
     end;
 
     local procedure AddUnSignedBigNumbers(Number1: Text; Number2: Text): Text
     var
         Result: Text;
-        Digit1, Digit2, Sum, Carry : Integer;
+        Digit1, Digit2 : Integer;
+        Sum, Carry : Integer;
         i, MaxLength : Integer;
     begin
         // Ensure numbers are padded to the same length
@@ -110,7 +110,8 @@ codeunit 57298 "INM Math Large Numbers"
     local procedure SubtractPositiveBigNumbers(Number1: Text; Number2: Text): Text
     var
         Result: Text;
-        Digit1, Digit2, Diff, Borrow : Integer;
+        Digit1, Digit2 : Integer;
+        Diff, Borrow : Integer;
         i, MaxLength : Integer;
         IsNegative: Boolean;
         Temp: Text;
@@ -530,10 +531,16 @@ codeunit 57298 "INM Math Large Numbers"
         IntArrBLen: Integer;
         RemIntArr: array[32] of Integer;
         RemIntArrLen: Integer;
+        negativeDividend: Boolean;
     begin
-        // Détecter signe Number1
-        if Dividend.StartsWith('-') then
-            Error('Inverse modulo shall only be calculated on positive dividend.');
+        negativeDividend := false;
+        if Dividend.StartsWith('-') then begin
+            negativeDividend := true;
+            Dividend := Dividend.Substring(2);
+        end;
+
+        if Divisor.StartsWith('-') then
+            Divisor := Divisor.Substring(2);
 
         if Divisor = '0' then
             Error('Division by zero is not allowed.');
@@ -541,7 +548,16 @@ codeunit 57298 "INM Math Large Numbers"
         ArrayLimbsMath.TextToArray(Dividend, IntArr, IntArrLen);
         ArrayLimbsMath.TextToArray(Divisor, IntArrB, IntArrBLen);
         ArrayLimbsMath.ModuloInverseArray(IntArr, IntArrLen, IntArrB, IntArrBLen, RemIntArr, RemIntArrLen);
-        Result := ArrayLimbsMath.ArrayToText(RemIntArr, RemIntArrLen);
+
+        if negativeDividend then begin
+            if ArrayLimbsMath.IsZeroArray(RemIntArr, RemIntArrLen) then
+                Result := '0'
+            else begin
+                ArrayLimbsMath.SubtractArrays(IntArrB, IntArrBLen, RemIntArr, RemIntArrLen, IntArr, IntArrLen);
+                Result := ArrayLimbsMath.ArrayToText(IntArr, IntArrLen);
+            end;
+        end else
+            Result := ArrayLimbsMath.ArrayToText(RemIntArr, RemIntArrLen);
         exit(Result);
     end;
 
