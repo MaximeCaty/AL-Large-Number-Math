@@ -15,7 +15,7 @@ The Codeunit "INM Array Limbs Arithmetic" handle the limbs operations.\
 For text based numbers, use the codeunit "INM Math Large Numbers" with following functions :\
 \
 AddBigNumbers(Number1: Text; Number2: Text): Text\
-SubtractBigNumbers(Number1: Text; Number2: Text): Text
+SubtractBigNumbers(Number1: Text; Number2: Text): Text\
 MultiplyBigNumbers(A: Text; B: Text) Result: Text\
 SquareBigNumber(A: Text): Text\
 PowerBigNumbers(Base: Text; Exponent: Text) Result: Text\
