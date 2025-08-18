@@ -7,23 +7,24 @@ The maximum value is : \
 \
 ***How it work***
 \
-Internally the value are stored as array of Integer (aka "limbs") for faster operation, the coduenit convert text to array of Integer in a base of 10^{9}.\
+Internally the value are stored as "limbs" Integer for faster operation, the codeunit convert text to array of Integer in a base of 10^9 (nine digits per limb).\
 The Codeunit "INM Array Limbs Arithmetic" handle the limbs operations.\
 \
  ***Supported Arithmetic operation***
 \
-For text based numbers, use the codeunit "INM Math Large Numbers" with following functions :\
-\
-AddBigNumbers(Number1: Text; Number2: Text): Text\
-SubtractBigNumbers(Number1: Text; Number2: Text): Text\
-MultiplyBigNumbers(A: Text; B: Text) Result: Text\
-SquareBigNumber(A: Text): Text\
-PowerBigNumbers(Base: Text; Exponent: Text) Result: Text\
-DivideBigNumbers(Dividend: Text; Divisor: Text) Result: Text\
-ModBigNumbers(Dividend: Text; Divisor: Text) Result: Text\
-ModInverseBigNumbers(Dividend: Text; Divisor: Text) Result: Text\
-CompareBigNumbers(Number1: Text; Number2: Text): Integer\
-\
+For text based numbers, use the codeunit "INM Math Large Numbers" with following functions :
+
+- Add(Number1: Text; Number2: Text): Text
+- Subtract(Number1: Text; Number2: Text): Text
+- Multiply(A: Text; B: Text) Result: Text
+- Square(A: Text): Text
+- Power(Base: Text; Exponent: Text) Result: Text
+- Divide(Dividend: Text; Divisor: Text) Result: Text
+- Mod(Dividend: Text; Divisor: Text) Result: Text
+- ModInverse(Dividend: Text; Divisor: Text) Result: Text
+- Compare(Number1: Text; Number2: Text): Integer
+	-  	Return -1 when Number1 < Number2, 0 when equal or 1 when larger
+
 Text passed to thoses functions must only contain digits from 0..9 and optional leading sign.\
 \
 ***How to Use***
@@ -47,13 +48,15 @@ You can combine multiple operation such as :
 ***Limitations***
 \
 \
-Performance : The limbs manipulation have been optimized for operation on large number. division use Knuh algorihtm. \
-Benchmark of 5'000 operations of random large number show an average duration of 10ns (0.01ms) per operation.\
-Fastest operation is Compare (average of 0.8ns) while other operation have consistent same average duration about 10ns.\
+Performance :\
+The limbs manipulation have been optimized for operation on large number.
+Benchmark of 5'000 operations of random large number show an approximate of 50ms duration, so average of 10ns (0.01ms) per operation.\
+The fastest operation is Compare (average of 0.8ns) then Square (average of 7ns) while other operation have consistent same average duration (about 10ns).\
+If your value is in supported range of BigInteger or Decimal, you should not use this functions as its slower than native operation.\
 \
 Length :\
-Maximum supported value is 288 digits "9" in positvie or negative (1 sign + 288 digits).\
-Operation result larger than 288 digit will throw an overflow error.\
+Maximum supported value is 288 digits "9" in positive or negative (sign "-" excluded of the length).\
+Operation result larger than 288 digits will throw an overflow error.\
 \
 Text Format:\
 Must stirctly contain digit in 0..9 and optioan leading negative sign "-".\
