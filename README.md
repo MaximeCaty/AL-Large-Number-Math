@@ -1,16 +1,15 @@
-Offer manipulation of Integer, larger than BigInteger as Text variable, including negative value in pure AL.
-
+**Offer arithmetic of Integer larger than BigInteger as Text variable in pure AL**
 Support up to 288 digits (equiv. 957 bit Integer)
 Decimals are not supported.
 The maximum value is : 
 9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999998
 
- - How it work
+***How it work***
 
 Internally the value are stored as array of Integer (aka "limbs") for faster operation, the coduenit convert text to array of Integer in a base of 10^{9} 
 Codeunit "INM Array Limbs Arithmetic" is for raw array manipulation
 
- - Supported operation
+ ***Supported Arithmetic operation***
 
 For text based numbers, use the codeunit "INM Math Large Numbers" with following functions :
 
@@ -25,7 +24,7 @@ CompareBigNumbers(Number1: Text; Number2: Text): Integer
 
 Text variable passed to thoses function must only contain digits from 0..9 and optional leading sign.
 
- - How to Use :
+***How to Use***
 
 
 var
