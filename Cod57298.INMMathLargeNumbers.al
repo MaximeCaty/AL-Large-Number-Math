@@ -22,7 +22,8 @@ codeunit 57298 "INM Math Large Numbers"
     - CompareBigNumbers(Number1: Text; Number2: Text): Integer
 */
 
-    procedure AddBigNumbers(Number1: Text; Number2: Text): Text
+    #region Add
+    procedure Add(Number1: Text; Number2: Text): Text
     var
         Sign1: Boolean;
         Sign2: Boolean;
@@ -45,17 +46,17 @@ codeunit 57298 "INM Math Large Numbers"
             Abs2 := Number2;
 
         if Sign1 = Sign2 then begin
-            Result := AddUnSignedBigNumbers(Abs1, Abs2);
+            Result := AddUnSigned(Abs1, Abs2);
             if Sign1 = false then
                 exit('-' + Result);
             exit(Result);
         end else
-            case CompareBigNumbers(Abs1, Abs2) of
+            case Compare(Abs1, Abs2) of
                 0:
                     exit('0');
                 1:
                     begin
-                        Result := SubtractBigNumbers(Abs1, Abs2);
+                        Result := Subtract(Abs1, Abs2);
                         if Sign1 = false then
                             exit('-' + Result)
                         else
@@ -63,7 +64,7 @@ codeunit 57298 "INM Math Large Numbers"
                     end;
                 -1:
                     begin
-                        Result := SubtractBigNumbers(Abs2, Abs1);
+                        Result := Subtract(Abs2, Abs1);
                         if Sign2 = false then
                             exit('-' + Result)
                         else
@@ -72,7 +73,7 @@ codeunit 57298 "INM Math Large Numbers"
             end;
     end;
 
-    local procedure AddUnSignedBigNumbers(Number1: Text; Number2: Text): Text
+    local procedure AddUnSigned(Number1: Text; Number2: Text): Text
     var
         Result: Text;
         Digit1, Digit2 : Integer;
@@ -106,8 +107,59 @@ codeunit 57298 "INM Math Large Numbers"
 
         exit(Result);
     end;
+    #endregion
 
-    local procedure SubtractPositiveBigNumbers(Number1: Text; Number2: Text): Text
+    #region Sub
+    procedure Subtract(Number1: Text; Number2: Text): Text
+    var
+        Sign1, Sign2 : Boolean;
+        AbsNum1, AbsNum2 : Text;
+        ResultAbs: Text;
+        ResultSign: Boolean;
+    begin
+        // Extraire signe Number1
+        if (StrLen(Number1) > 0) and (Number1.StartsWith('-')) then begin
+            Sign1 := false;
+            AbsNum1 := Number1.TrimStart('-');
+        end else begin
+            Sign1 := true;
+            AbsNum1 := Number1;
+        end;
+
+        // Extraire signe Number2
+        if (StrLen(Number2) > 0) and (Number2.StartsWith('-')) then begin
+            Sign2 := false;
+            AbsNum2 := Number2.TrimStart('-');
+        end else begin
+            Sign2 := true;
+            AbsNum2 := Number2;
+        end;
+
+        // Maintenant on calcule Result = Sign1 * AbsNum1 - Sign2 * AbsNum2
+
+        if Sign1 = Sign2 then begin
+            // même signe => on fait une soustraction des valeurs absolues
+            if Compare(AbsNum1, AbsNum2) >= 0 then begin
+                ResultAbs := SubtractPositive(AbsNum1, AbsNum2); // nouvelle fonction à créer : soustraction sans signe, AbsNum1 >= AbsNum2
+                ResultSign := Sign1;
+            end else begin
+                ResultAbs := SubtractPositive(AbsNum2, AbsNum1);
+                ResultSign := not Sign1;
+            end;
+        end else begin
+            // signes différents => on fait une addition
+            ResultAbs := Add(AbsNum1, AbsNum2);
+            ResultSign := Sign1;
+        end;
+
+        // Ajouter signe si négatif et différent de 0
+        if (ResultSign = false) and (ResultAbs <> '0') then
+            exit('-' + ResultAbs)
+        else
+            exit(ResultAbs);
+    end;
+
+    local procedure SubtractPositive(Number1: Text; Number2: Text): Text
     var
         Result: Text;
         Digit1, Digit2 : Integer;
@@ -117,7 +169,7 @@ codeunit 57298 "INM Math Large Numbers"
         Temp: Text;
     begin
         // Determine if result will be negative
-        IsNegative := CompareBigNumbers(Number1, Number2) < 0;
+        IsNegative := Compare(Number1, Number2) < 0;
 
         // If Number1 < Number2, swap and set negative flag
         if IsNegative then begin
@@ -160,57 +212,10 @@ codeunit 57298 "INM Math Large Numbers"
 
         exit(Result);
     end;
+    #endregion
 
-    procedure SubtractBigNumbers(Number1: Text; Number2: Text): Text
-    var
-        Sign1, Sign2 : Boolean;
-        AbsNum1, AbsNum2 : Text;
-        ResultAbs: Text;
-        ResultSign: Boolean;
-    begin
-        // Extraire signe Number1
-        if (StrLen(Number1) > 0) and (Number1.StartsWith('-')) then begin
-            Sign1 := false;
-            AbsNum1 := Number1.TrimStart('-');
-        end else begin
-            Sign1 := true;
-            AbsNum1 := Number1;
-        end;
-
-        // Extraire signe Number2
-        if (StrLen(Number2) > 0) and (Number2.StartsWith('-')) then begin
-            Sign2 := false;
-            AbsNum2 := Number2.TrimStart('-');
-        end else begin
-            Sign2 := true;
-            AbsNum2 := Number2;
-        end;
-
-        // Maintenant on calcule Result = Sign1 * AbsNum1 - Sign2 * AbsNum2
-
-        if Sign1 = Sign2 then begin
-            // même signe => on fait une soustraction des valeurs absolues
-            if CompareBigNumbers(AbsNum1, AbsNum2) >= 0 then begin
-                ResultAbs := SubtractPositiveBigNumbers(AbsNum1, AbsNum2); // nouvelle fonction à créer : soustraction sans signe, AbsNum1 >= AbsNum2
-                ResultSign := Sign1;
-            end else begin
-                ResultAbs := SubtractPositiveBigNumbers(AbsNum2, AbsNum1);
-                ResultSign := not Sign1;
-            end;
-        end else begin
-            // signes différents => on fait une addition
-            ResultAbs := AddBigNumbers(AbsNum1, AbsNum2);
-            ResultSign := Sign1;
-        end;
-
-        // Ajouter signe si négatif et différent de 0
-        if (ResultSign = false) and (ResultAbs <> '0') then
-            exit('-' + ResultAbs)
-        else
-            exit(ResultAbs);
-    end;
-
-    procedure SquareBigNumber(A: Text): Text
+    #region Square
+    procedure Square(A: Text): Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IntArr: array[32] of Integer;
@@ -222,8 +227,10 @@ codeunit 57298 "INM Math Large Numbers"
         ArrayLimbsMath.SquareArrays(IntArr, IntArrLen, ResIntArr, ResIntArrLen);
         exit(ArrayLimbsMath.ArrayToText(ResIntArr, ResIntArrLen)); // square is alway positive
     end;
+    #endregion
 
-    procedure MultiplyBigNumbers(A: Text; B: Text) Result: Text
+    #region Multiply
+    procedure Multiply(A: Text; B: Text) Result: Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IsNegative: Boolean;
@@ -265,8 +272,10 @@ codeunit 57298 "INM Math Large Numbers"
 
         exit(Result);
     end;
+    #endregion
 
-    procedure PowerBigNumbers(Base: Text; Exponent: Text) Result: Text
+    #region Power
+    procedure Power(Base: Text; Exponent: Text) Result: Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IsNegative: Boolean;
@@ -311,8 +320,10 @@ codeunit 57298 "INM Math Large Numbers"
 
         exit(Result);
     end;
+    #endregion 
 
-    procedure DivideBigNumbers(Dividend: Text; Divisor: Text) Result: Text
+    #region Divide
+    procedure Divide(Dividend: Text; Divisor: Text) Result: Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IntArr: array[32] of Integer;
@@ -344,7 +355,7 @@ codeunit 57298 "INM Math Large Numbers"
             Error('Division by zero is not allowed.');
 
         // Si Number1 < Divisor, quotient = 0
-        if CompareBigNumbers(Dividend, Divisor) = -1 then
+        if Compare(Dividend, Divisor) = -1 then
             exit('0');
 
         ArrayLimbsMath.TextToArray(Dividend, IntArr, IntArrLen);
@@ -359,7 +370,7 @@ codeunit 57298 "INM Math Large Numbers"
         exit(Result);
     end;
 
-    procedure DivideBigNumbers(Number1: Text; Divisor: Text; MaxDecimalPlaces: Integer): Text
+    procedure Divide(Number1: Text; Divisor: Text; MaxDecimalPlaces: Integer): Text
     // This division return also decimal using dot "." as decimal separator, if needed
     var
         Quotient: TextBuilder;
@@ -414,8 +425,8 @@ codeunit 57298 "INM Math Large Numbers"
 
             // Count how many times Divisor fits into Current
             Count := 0;
-            while CompareBigNumbers(Current, AdjustedDivisor) >= 0 do begin
-                Current := SubtractBigNumbers(Current, AdjustedDivisor);
+            while Compare(Current, AdjustedDivisor) >= 0 do begin
+                Current := Subtract(Current, AdjustedDivisor);
                 Count += 1;
             end;
 
@@ -462,8 +473,8 @@ codeunit 57298 "INM Math Large Numbers"
                 Current := TrimLeadingZeros(Current);
 
                 Count := 0;
-                while CompareBigNumbers(Current, AdjustedDivisor) >= 0 do begin
-                    Current := SubtractBigNumbers(Current, AdjustedDivisor);
+                while Compare(Current, AdjustedDivisor) >= 0 do begin
+                    Current := Subtract(Current, AdjustedDivisor);
                     Count += 1;
                 end;
 
@@ -473,8 +484,10 @@ codeunit 57298 "INM Math Large Numbers"
 
         exit(TrimTrailingDecimalZeros(TrimLeadingZeros(Quotient.ToText())));
     end;
+    #endregion
 
-    procedure ModBigNumbers(Dividend: Text; Divisor: Text) Result: Text
+    #region Modulo
+    procedure Modulo(Dividend: Text; Divisor: Text) Result: Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IntArr: array[32] of Integer;
@@ -506,8 +519,8 @@ codeunit 57298 "INM Math Large Numbers"
             Error('Division by zero is not allowed.');
 
         // Si Number1 < Divisor, quotient = 0
-        if CompareBigNumbers(Dividend, Divisor) = -1 then
-            exit('0');
+        if Compare(Dividend, Divisor) = -1 then
+            exit(Dividend);
 
         ArrayLimbsMath.TextToArray(Dividend, IntArr, IntArrLen);
         ArrayLimbsMath.TextToArray(Divisor, IntArrB, IntArrBLen);
@@ -521,8 +534,10 @@ codeunit 57298 "INM Math Large Numbers"
                 Result := ArrayLimbsMath.ArrayToText(RemIntArr, RemIntArrLen);
         exit(Result);
     end;
+    #endregion
 
-    procedure ModInverseBigNumbers(Dividend: Text; Divisor: Text) Result: Text
+    #region Modulo Inverse
+    procedure ModuloInverse(Dividend: Text; Divisor: Text) Result: Text
     var
         ArrayLimbsMath: codeunit "INM Array Limbs Arithmetic";
         IntArr: array[32] of Integer;
@@ -560,8 +575,10 @@ codeunit 57298 "INM Math Large Numbers"
             Result := ArrayLimbsMath.ArrayToText(RemIntArr, RemIntArrLen);
         exit(Result);
     end;
+    #endregion
 
-    procedure CompareBigNumbers(Number1: Text; Number2: Text): Integer
+    #region Compare
+    procedure Compare(Number1: Text; Number2: Text): Integer
     var
         Sign1: Boolean;
         Sign2: Boolean;
@@ -589,12 +606,12 @@ codeunit 57298 "INM Math Large Numbers"
                 exit(-1);
 
         if Sign1 then
-            exit(CompareBigNumbersUnSigned(Abs1, Abs2))
+            exit(CompareUnSigned(Abs1, Abs2))
         else
-            exit(-CompareBigNumbersUnSigned(Abs1, Abs2));
+            exit(-CompareUnSigned(Abs1, Abs2));
     end;
 
-    local procedure CompareBigNumbersUnSigned(Number1: Text; Number2: Text): Integer
+    local procedure CompareUnSigned(Number1: Text; Number2: Text): Integer
     var
         Len1, Len2 : Integer;
     begin
@@ -620,6 +637,12 @@ codeunit 57298 "INM Math Large Numbers"
         if Number1 < Number2 then
             exit(-1);
         exit(0);
+    end;
+    #endregion
+
+    procedure IsEven(Number: Text): Boolean
+    begin
+        exit(Number[StrLen(Number)] in ['0', '2', '4', '6', '8']);
     end;
 
 
@@ -686,13 +709,13 @@ codeunit 57298 "INM Math Large Numbers"
         Result: Text;
     begin
         N := Number;
-        while CompareBigNumbers(N, '0') > 0 do begin
+        while Compare(N, '0') > 0 do begin
             //Evaluate(Bit, ModBigNumbers(N, '2'));
-            if ModBigNumbers(N, '2') = '0' then
+            if Modulo(N, '2') = '0' then
                 Result := '0' + Result
             else
                 Result := '1' + Result;
-            N := DivideBigNumbers(N, '2');
+            N := Divide(N, '2');
         end;
         exit(Result);
     end;

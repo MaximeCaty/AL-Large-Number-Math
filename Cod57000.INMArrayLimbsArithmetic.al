@@ -405,7 +405,7 @@ codeunit 57000 "INM Array Limbs Arithmetic"
     #endregion
 
     #region Arith.ModInv
-    /*procedure ModuloInverseArray(
+    procedure ModuloInverseArray(
         Dividend: array[32] of Integer; DividendLen: Integer;
         Divisor: array[32] of Integer; DivisorLen: Integer;
         var Remainder: array[32] of Integer; var rLen: Integer)
@@ -483,131 +483,6 @@ codeunit 57000 "INM Array Limbs Arithmetic"
                 SubtractArrays(Divisor, DivisorLen, new_r, new_r_len, Remainder, rLen);
         end else begin
             // Zero: shouldn't happen
-            Remainder[1] := 0;
-            rLen := 1;
-        end;
-    end;*/
-    procedure ModuloInverseArray(
-        Dividend: array[32] of Integer; DividendLen: Integer;
-        Divisor: array[32] of Integer; DivisorLen: Integer;
-        var Remainder: array[32] of Integer; var rLen: Integer)
-    var
-        u: array[32] of Integer;
-        u_len: Integer;
-        v: array[32] of Integer;
-        v_len: Integer;
-        s_u: array[32] of Integer;
-        s_u_len: Integer;
-        s_u_sign: Integer;  // x1: coeff of dividend for u
-        t_u: array[32] of Integer;
-        t_u_len: Integer;
-        t_u_sign: Integer;  // y1: coeff of divisor for u
-        s_v: array[32] of Integer;
-        s_v_len: Integer;
-        s_v_sign: Integer;  // x2: coeff of dividend for v
-        t_v: array[32] of Integer;
-        t_v_len: Integer;
-        t_v_sign: Integer;  // y2: coeff of divisor for v
-        orig_a: array[32] of Integer;
-        orig_a_len: Integer;
-        orig_b: array[32] of Integer;
-        orig_b_len: Integer;
-        temp: array[32] of Integer;
-        temp_len: Integer;
-        temp_sign: Integer;
-        quot: array[32] of Integer;
-        quot_len: Integer;
-        shift: Integer;
-    begin
-        // Initial mod to reduce dividend, into u
-        DivideArrayWithRemainder(Dividend, DividendLen, Divisor, DivisorLen, u, u_len, quot, quot_len);
-        if IsZeroArray(u, u_len) then begin
-            Remainder[1] := 0;
-            rLen := 1;
-            exit;
-        end;
-        CopyArray(v, Divisor, 1);
-        v_len := DivisorLen;
-
-        // Remove common factors of 2
-        shift := 0;
-        while IsEvenArray(u, u_len) and IsEvenArray(v, v_len) do begin
-            DivideBySmall(u, u_len, 2);
-            DivideBySmall(v, v_len, 2);
-            shift += 1;
-        end;
-
-        // Copy original shifted a and b
-        CopyArray(orig_a, u, 1);
-        orig_a_len := u_len;
-        CopyArray(orig_b, v, 1);
-        orig_b_len := v_len;
-
-        // Initialize coefficients
-        s_u_sign := 1;
-        s_u[1] := 1;
-        s_u_len := 1;  // x1 = 1
-        t_u_sign := 0;
-        t_u_len := 0;  // y1 = 0
-        s_v_sign := 0;
-        s_v_len := 0;  // x2 = 0
-        t_v_sign := 1;
-        t_v[1] := 1;
-        t_v_len := 1;  // y2 = 1
-
-        // Main loop
-        while CompareArrays(u, u_len, v, v_len) <> 0 do begin
-            if IsEvenArray(u, u_len) then begin
-                DivideBySmall(u, u_len, 2);
-                if IsEvenSigned(s_u_sign, s_u, s_u_len) and IsEvenSigned(t_u_sign, t_u, t_u_len) then begin
-                    HalveSigned(s_u_sign, s_u, s_u_len);
-                    HalveSigned(t_u_sign, t_u, t_u_len);
-                end else begin
-                    AddSigned(s_u_sign, s_u, s_u_len, 1, orig_b, orig_b_len, temp_sign, temp, temp_len);
-                    FloorHalveSigned(temp_sign, temp, temp_len, s_u_sign, s_u, s_u_len);
-                    SubtractSigned(t_u_sign, t_u, t_u_len, 1, orig_a, orig_a_len, temp_sign, temp, temp_len);
-                    FloorHalveSigned(temp_sign, temp, temp_len, t_u_sign, t_u, t_u_len);
-                end;
-            end else if IsEvenArray(v, v_len) then begin
-                DivideBySmall(v, v_len, 2);
-                if IsEvenSigned(s_v_sign, s_v, s_v_len) and IsEvenSigned(t_v_sign, t_v, t_v_len) then begin
-                    HalveSigned(s_v_sign, s_v, s_v_len);
-                    HalveSigned(t_v_sign, t_v, t_v_len);
-                end else begin
-                    AddSigned(s_v_sign, s_v, s_v_len, 1, orig_b, orig_b_len, temp_sign, temp, temp_len);
-                    FloorHalveSigned(temp_sign, temp, temp_len, s_v_sign, s_v, s_v_len);
-                    SubtractSigned(t_v_sign, t_v, t_v_len, 1, orig_a, orig_a_len, temp_sign, temp, temp_len);
-                    FloorHalveSigned(temp_sign, temp, temp_len, t_v_sign, t_v, t_v_len);
-                end;
-            end else if CompareArrays(u, u_len, v, v_len) > 0 then begin
-                SubtractArrays(u, u_len, v, v_len, u, u_len);
-                SubtractSigned(s_u_sign, s_u, s_u_len, s_v_sign, s_v, s_v_len, s_u_sign, s_u, s_u_len);
-                SubtractSigned(t_u_sign, t_u, t_u_len, t_v_sign, t_v, t_v_len, t_u_sign, t_u, t_u_len);
-            end else begin
-                SubtractArrays(v, v_len, u, u_len, v, v_len);
-                SubtractSigned(s_v_sign, s_v, s_v_len, s_u_sign, s_u, s_u_len, s_v_sign, s_v, s_v_len);
-                SubtractSigned(t_v_sign, t_v, t_v_len, t_u_sign, t_u, t_u_len, t_v_sign, t_v, t_v_len);
-            end;
-        end;
-
-        // Check if GCD is 1
-        if (shift > 0) or not ((u_len = 1) and (u[1] = 1)) then begin
-            Remainder[1] := 0;
-            rLen := 1;
-            exit;
-        end;
-
-        // Compute the modular inverse from s_u (coeff of dividend), handling sign
-        if s_u_sign > 0 then begin
-            DivideArrayWithRemainder(s_u, s_u_len, Divisor, DivisorLen, Remainder, rLen, quot, quot_len);
-        end else if s_u_sign < 0 then begin
-            DivideArrayWithRemainder(s_u, s_u_len, Divisor, DivisorLen, temp, temp_len, quot, quot_len);
-            if IsZeroArray(temp, temp_len) then begin
-                Remainder[1] := 0;
-                rLen := 1;
-            end else
-                SubtractArrays(Divisor, DivisorLen, temp, temp_len, Remainder, rLen);
-        end else begin
             Remainder[1] := 0;
             rLen := 1;
         end;
