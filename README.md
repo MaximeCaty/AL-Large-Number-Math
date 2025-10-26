@@ -31,17 +31,17 @@ Text passed to thoses functions must only contain digits from 0..9 and optional 
 
 
     var
-	    LargeNumbMath: Codeunit "INM Math Large Numbers";
+	    BigBigInt: Codeunit "INM Math Large Numbers";
 	    Result: Text;
     begin
-	    Result := LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421');
-	    Message('Modulo %1 = %2', Result, LargeNumbMath.ModBigNumbers(Result, '4'));
+	    Result := BigBigInt.Multiply('12345678910111213', '98765421');
+	    Message('Modulo %1 = %2', Result, BigBigInt.Mod(Result, '4'));
     end;
 
 You can combine multiple operation such as :
 
 
-    if LargeNumbMath.SubtractBigNumbers(LargeNumbMath.MultiplyBigNumbers('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then
+    if BigBigInt.Subtract(BiBigInt.Multiply('12345678910111213', '98765421'), '-152654') = '1219326175087955108918327' then
      ...
 
 
@@ -66,10 +66,7 @@ Any other format will throw an error for the conversion into limb array.\
 Negative result are returned with leading "-".\
 \
 Decimals:\
-Decimnals are not computed, division resulting in fraction are returned rounded down.\
-Providing text with decimal separator such a s dot or coma to operation function will throw an error or incorrect output.\
-You may cheat to support decimal adding trailing 0 to your number (as much as the number of decimal), then format the result to add a decimal separator at the position : strlen - number of zero you added.
-\
-Operations:\
-SquareRoot, and trigonometric function are not implemented.\
+Decimnals are not computed, division resuktz with fractions are returned truncated.\
+Providing text with decimal separator such as dot or coma to will throw a runtime error or incorrect result.\
+
 
