@@ -47,7 +47,7 @@ begin
 end;
 ```
 
-You can combine multiple operations ine one line such as :
+You can combine multiple operations in one line such as :
 
 ```
 Result := Math.Subtract(Math.Multiply('12345678910111213', '98765421'), '-152654');
