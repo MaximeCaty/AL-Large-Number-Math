@@ -9,13 +9,7 @@ Support signed 288 digits (120 byte Integer equivalent).
 Maximum supported value is :  
 (-)9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999  
   
-## How it work
-
-Internally value are stored as "limbs" of AL Integers for faster operation.
-The codeunit "INM Array Limbs Arithmetic" convert text based large number to array of Integer in a base of 10^9 (nine digits per limb). This codeunit have been carefully optimised for intensive call.
-
-Because AL language does not support any value larger than BigInteger (8 byte)  or Decimal (12 byte), you must handle larger value using text representation.
-  
+ 
 ## Supported operation
 
 
@@ -33,6 +27,13 @@ Use the codeunit "INM Math Large Numbers" with following functions :
 		- Return -1 when Number1 < Number2, 0 when equal or 1 when larger
 
 Values passed and returned by thoses function are text based integer, and must only contain digits from 0..9 with optional leading sign.  
+
+## How it work
+
+Internally value are stored as "limbs" of AL Integers for faster operation.
+The codeunit "INM Array Limbs Arithmetic" convert text based large number to array of Integer in a base of 10^9 (nine digits per limb). This codeunit have been carefully optimised for intensive call.
+
+Values passed and returned, are represented with Text variable type.
   
 ##  Usage
 
